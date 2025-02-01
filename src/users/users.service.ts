@@ -3,17 +3,35 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Database } from 'src/database';
 import { InjectKysely } from 'nestjs-kysely';
+import {
+  Action,
+  CaslAbilityFactory,
+} from 'src/casl/casl-ability.factory/casl-ability.factory';
+import { sql } from 'kysely';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectKysely() private readonly db: Database) {}
+  constructor(
+    @InjectKysely() private readonly db: Database,
+    private readonly casl: CaslAbilityFactory,
+  ) {
+    const ability = this.casl.defineAbilityFor({
+      user_id: '1',
+      role: 'admin',
+      password: '123456',
+      email: 'test@test.com',
+      created_at: new Date(),
+    });
+
+    ability.can(Action.Manage, 'users');
+  }
 
   create(createUserDto: CreateUserDto) {
     return this.db.insertInto('users').values(createUserDto).executeTakeFirst();
   }
 
   findAll() {
-    return this.db.selectFrom('users').selectAll().execute();
+    return this.db.selectFrom('users').where(sql(rules)).selectAll().execute();
   }
 
   findOne(id: string) {
