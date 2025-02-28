@@ -4,8 +4,9 @@ import {
   InferSubjects,
   MongoAbility,
 } from '@casl/ability';
+import { rulesToQuery } from '@casl/ability/extra';
 import { Injectable } from '@nestjs/common';
-import { TSDB } from 'src/database';
+import { Database, TSDB } from 'src/database';
 
 export enum Action {
   Manage = 'manage',
@@ -39,4 +40,17 @@ export class CaslAbilityFactory {
 
     return build();
   }
+}
+
+function rulesToKysely(rule) {
+  return rule.inverted ? { $not: rule.conditions } : rule.conditions;
+}
+
+export function accessibleBy(
+  ability: AppAbility,
+  subject: AppSubjects,
+  action,
+) {
+  const query = rulesToQuery(ability, action, subject, rulesToKysely);
+  return query;
 }
